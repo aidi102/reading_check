@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>듀얼 브레인 독서 진도 관리</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .light-mode {
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+
+        .dark-mode {
+            background-color: #111827;
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 1024px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .light-mode .header {
+            background-color: #ffffff;
+            border-color: #e5e7eb;
+        }
+
+        .dark-mode .header {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .header-subtitle {
+            font-size: 0.875rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .light-mode .btn {
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .light-mode .btn:hover {
+            background-color: #e5e7eb;
+        }
+
+        .dark-mode .btn {
+            background-color: #374151;
+            color: #ffffff;
+        }
+
+        .dark-mode .btn:hover {
+            background-color: #4b5563;
+        }
+
+        .main-content {
+            padding: 1.5rem 0;
+        }
+
+        .section {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .light-mode .section {
+            background-color: #ffffff;
+            border-color: #e5e7eb;
+        }
+
+        .dark-mode .section {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid;
+        }
+
+        .light-mode .stat-card {
+            background-color: #ffffff;
+            border-color: #e5e7eb;
+        }
+
+        .dark-mode .stat-card {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.7;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 1rem;
+            border-radius: 9999px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .light-mode .progress-bar-container {
+            background-color: #e5e7eb;
+        }
+
+        .dark-mode .progress-bar-container {
+            background-color: #374151;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transition: width 0.5s ease-out;
+        }
+
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .badge {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 2px solid;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .badge.earned {
+            border-color: #facc15;
+        }
+
+        .light-mode .badge.earned {
+            background-color: #fefce8;
+        }
+
+        .dark-mode .badge.earned {
+            background-color: rgba(251, 191, 36, 0.2);
+        }
+
+        .light-mode .badge:not(.earned) {
+            background-color: #f9fafb;
+            border-color: #e5e7eb;
+        }
+
+        .dark-mode .badge:not(.earned) {
+            background-color: rgba(55, 65, 81, 0.5);
+            border-color: #4b5563;
+        }
+
+        .badge-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge:not(.earned) .badge-icon {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+
+        .badge-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .badge-description {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+
+        .week-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .week-01 {
+            color: #2563eb;
+        }
+
+        .week-02 {
+            color: #7c3aed;
+        }
+
+        .day-item {
+            margin-bottom: 1rem;
+        }
+
+        .day-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .light-mode .day-content:not(.completed) {
+            border-color: #e5e7eb;
+        }
+
+        .light-mode .day-content:not(.completed):hover {
+            background-color: #f9fafb;
+        }
+
+        .light-mode .day-content.completed {
+            background-color: #f0fdf4;
+            border-color: #22c55e;
+        }
+
+        .dark-mode .day-content:not(.completed) {
+            border-color: #4b5563;
+        }
+
+        .dark-mode .day-content:not(.completed):hover {
+            background-color: #374151;
+        }
+
+        .dark-mode .day-content.completed {
+            background-color: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+        }
+
+        .day-content.weekend {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .day-content.week-01:not(.weekend) {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .day-content.week-02:not(.weekend) {
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .day-checkbox {
+            width: 1.75rem;
+            height: 1.75rem;
+            border: 2px solid #9ca3af;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .day-checkbox.checked {
+            background-color: #22c55e;
+            border-color: #22c55e;
+            color: white;
+        }
+
+        .day-checkbox:hover {
+            transform: scale(1.1);
+        }
+
+        .day-info {
+            flex-grow: 1;
+        }
+
+        .day-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .day-title.completed {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .day-title.weekend {
+            color: #ea580c;
+        }
+
+        .day-title.week-01:not(.weekend) {
+            color: #2563eb;
+        }
+
+        .day-title.week-02:not(.weekend) {
+            color: #7c3aed;
+        }
+
+        .dark-mode .day-title.weekend {
+            color: #fb923c;
+        }
+
+        .dark-mode .day-title.week-01:not(.weekend) {
+            color: #60a5fa;
+        }
+
+        .dark-mode .day-title.week-02:not(.weekend) {
+            color: #a78bfa;
+        }
+
+        .day-pages {
+            font-size: 0.875rem;
+            opacity: 0.7;
+        }
+
+        .day-completed {
+            font-size: 0.75rem;
+            color: #22c55e;
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+
+        .note-btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s ease;
+            background: none;
+        }
+
+        .day-item:hover .note-btn {
+            opacity: 1;
+        }
+
+        .note-btn.has-note {
+            color: #3b82f6;
+        }
+
+        .note-btn:not(.has-note) {
+            color: #9ca3af;
+        }
+
+        .note-content {
+            margin-top: 0.5rem;
+            margin-left: 2.75rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .light-mode .note-content {
+            background-color: #f3f4f6;
+        }
+
+        .dark-mode .note-content {
+            background-color: #374151;
+        }
+
+        .note-edit {
+            margin-top: 0.5rem;
+            margin-left: 2.75rem;
+        }
+
+        .note-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid;
+            border-radius: 0.5rem;
+            resize: none;
+            font-family: inherit;
+        }
+
+        .light-mode .note-textarea {
+            background-color: #ffffff;
+            border-color: #d1d5db;
+            color: #1f2937;
+        }
+
+        .dark-mode .note-textarea {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #ffffff;
+        }
+
+        .note-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-primary {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-secondary {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .light-mode .btn-secondary {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .light-mode .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+
+        .dark-mode .btn-secondary {
+            background-color: #374151;
+            color: #ffffff;
+        }
+
+        .dark-mode .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            color: white;
+            padding: 2rem;
+            border-radius: 9999px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            z-index: 1000;
+            animation: bounce 1s infinite;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% {
+                transform: translate(-50%, -50%) translateY(0);
+            }
+            40%, 43% {
+                transform: translate(-50%, -50%) translateY(-30px);
+            }
+            70% {
+                transform: translate(-50%, -50%) translateY(-15px);
+            }
+            90% {
+                transform: translate(-50%, -50%) translateY(-4px);
+            }
+        }
+
+        .footer-message {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.875rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .badges-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .day-content {
+                gap: 0.75rem;
+                padding: 0.75rem;
+            }
+            
+            .day-title {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-title">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                    <div>
+                        <h1>듀얼 브레인 독서 진도</h1>
+                        <div class="header-subtitle">체크리스트</div>
+                    </div>
+                </div>
+                <div class="header-buttons">
+                    <button class="btn" onclick="toggleDarkMode()">
+                        <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                    </button>
+                    <button class="btn" onclick="resetProgress()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Animation -->
+    <div id="celebration" class="celebration" style="display: none;"></div>
+
+    <div class="container">
+        <div class="main-content">
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #3b82f6;" id="progress-percentage">0%</div>
+                    <div class="stat-label">전체 진도율</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #22c55e;" id="completed-days">0</div>
+                    <div class="stat-label">완료 단계</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #f59e0b;" id="streak-count">0</div>
+                    <div class="stat-label">연속 학습일</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #8b5cf6;" id="badge-count">0</div>
+                    <div class="stat-label">획득 배지</div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                    <h2 style="font-size: 1.125rem; font-weight: 600;">전체 진도</h2>
+                    <span style="font-size: 0.875rem; opacity: 0.7;" id="progress-text">0/12 완료</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div style="text-align: center; margin-top: 0.75rem;">
+                    <p style="font-size: 0.875rem; font-weight: 500;" id="motivation-message">듀얼 브레인 독서 여행을 시작해보세요! 🚀</p>
+                </div>
+            </div>
+
+            <!-- Badges -->
+            <div class="section">
+                <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">성취 배지</h2>
+                <div class="badges-grid">
+                    <div class="badge" id="badge-fire">
+                        <div class="badge-icon">🔥</div>
+                        <div class="badge-name">불타는 열정</div>
+                        <div class="badge-description">3일 연속 학습</div>
+                    </div>
+                    <div class="badge" id="badge-lightning">
+                        <div class="badge-icon">⚡</div>
+                        <div class="badge-name">번개 같은 집중력</div>
+                        <div class="badge-description">7일 연속 학습</div>
+                    </div>
+                    <div class="badge" id="badge-trophy">
+                        <div class="badge-icon">🏆</div>
+                        <div class="badge-name">챔피언</div>
+                        <div class="badge-description">14일 연속 학습</div>
+                    </div>
+                    <div class="badge" id="badge-diamond">
+                        <div class="badge-icon">💎</div>
+                        <div class="badge-name">다이아몬드 학습자</div>
+                        <div class="badge-description">30일 연속 학습</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expected Completion -->
+            <div class="section">
+                <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M16 8l-8 8"/>
+                        <path d="M8 8l8 8"/>
+                    </svg>
+                    예상 완료일
+                </h2>
+                <p style="font-size: 2rem; font-weight: bold; color: #22c55e;" id="expected-completion">첫 번째 Day를 시작하면 예상 완료일을 계산해드려요</p>
+            </div>
+
+            <!-- Week 1 -->
+            <div class="section">
+                <div class="week-title week-01">
+                    WEEK 01
+                    <span style="font-size: 0.875rem; opacity: 0.7;" id="week1-progress">0/6 완료</span>
+                </div>
+                <div id="week1-days"></div>
+            </div>
+
+            <!-- Week 2 -->
+            <div class="section">
+                <div class="week-title week-02">
+                    WEEK 02
+                    <span style="font-size: 0.875rem; opacity: 0.7;" id="week2-progress">0/6 완료</span>
+                </div>
+                <div id="week2-days"></div>
+            </div>
+
+            <!-- Footer Message -->
+            <div class="section">
+                <div class="footer-message">
+                    독서 진도표는 꾸준한 독서를 위한 참고용이며, 각자의 속도에 맞춰서 활용해주세요! 🌟
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 학습 데이터
+        const studyData = {
+            days: [
+                {
+                    id: 1,
+                    title: 'DAY 01 - 들어가는 말',
+                    pages: '8-19p',
+                    week: 1,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 2,
+                    title: 'DAY 02 - 1부 1장',
+                    pages: '22-51p',
+                    week: 1,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 3,
+                    title: 'DAY 03 - 1부 2장',
+                    pages: '52-74p',
+                    week: 1,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 4,
+                    title: 'DAY 04 - 1부 3장',
+                    pages: '75-96p',
+                    week: 1,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 5,
+                    title: 'DAY 05 - 2부 4장',
+                    pages: '98-133p',
+                    week: 1,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 6,
+                    title: '주말 - 밑줄 진도 재우기 & 1회 OT영상 시청',
+                    pages: '8-133p 복습',
+                    week: 1,
+                    type: 'weekend',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 7,
+                    title: 'DAY 06 - 2부 5장',
+                    pages: '134-173p',
+                    week: 2,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 8,
+                    title: 'DAY 07 - 2부 6장',
+                    pages: '174-218p',
+                    week: 2,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 9,
+                    title: 'DAY 08 - 2부 7장',
+                    pages: '219-242p',
+                    week: 2,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 10,
+                    title: 'DAY 09 - 2부 8장',
+                    pages: '243-259p',
+                    week: 2,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 11,
+                    title: 'DAY 10 - 2부 9장 (감사의 말)',
+                    pages: '260-286p',
+                    week: 2,
+                    type: 'day',
+                    completed: false,
+                    completedDate: null
+                },
+                {
+                    id: 12,
+                    title: '주말 - 밑줄 진도 재우기 & 썽큐 인사이드 영상 시청 & 서평쓰기',
+                    pages: '134-286p 복습',
+                    week: 2,
+                    type: 'weekend',
+                    completed: false,
+                    completedDate: null
+                }
+            ],
+            streakCount: 0,
+            lastStudyDate: null,
+            badges: [],
+            notes: {}
+        };
+
+        const badges = [
+            { id: 'fire', name: '불타는 열정', requirement: 3 },
+            { id: 'lightning', name: '번개 같은 집중력', requirement: 7 },
+            { id: 'trophy', name: '챔피언', requirement: 14 },
+            { id: 'diamond', name: '다이아몬드 학습자', requirement: 30 }
+        ];
+
+        let editingNote = null;
+
+        // 로컬스토리지에서 데이터 로드
+        function loadData() {
+            const saved = localStorage.getItem('dualBrainStudyData');
+            if (saved) {
+                const savedData = JSON.parse(saved);
+                Object.assign(studyData, savedData);
+            }
+        }
+
+        // 로컬스토리지에 데이터 저장
+        function saveData() {
+            localStorage.setItem('dualBrainStudyData', JSON.stringify(studyData));
+        }
+
+        // 다크모드 토글
+        function toggleDarkMode() {
+            const body = document.body;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                themeIcon.innerHTML = `
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                `;
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                themeIcon.innerHTML = `
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                `;
+                localStorage.setItem('darkMode', 'false');
+            }
+        }
+
+        // 진도 초기화
+        function resetProgress() {
+            if (confirm('모든 진도를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                studyData.days.forEach(day => {
+                    day.completed = false;
+                    day.completedDate = null;
+                });
+                studyData.streakCount = 0;
+                studyData.lastStudyDate = null;
+                studyData.badges = [];
+                studyData.notes = {};
+                saveData();
+                updateUI();
+            }
+        }
+
+        // 연속 학습일 계산
+        function checkStreak(newDate) {
+            const today = new Date(newDate);
+            const lastDate = studyData.lastStudyDate ? new Date(studyData.lastStudyDate) : null;
+            
+            if (!lastDate) {
+                return 1;
+            }
+            
+            const diffTime = today.getTime() - lastDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+                return studyData.streakCount + 1;
+            } else if (diffDays === 0) {
+                return studyData.streakCount;
+            } else {
+                return 1;
+            }
+        }
+
+        // 배지 업데이트
+        function updateBadges(newStreak) {
+            const newBadges = [...studyData.badges];
+            badges.forEach(badge => {
+                if (newStreak >= badge.requirement && !newBadges.includes(badge.id)) {
+                    newBadges.push(badge.id);
+                    showCelebration(`🎉 새로운 배지 획득: ${badge.name}!`);
+                }
+            });
+            return newBadges;
+        }
+
+        // 축하 애니메이션 표시
+        function showCelebration(message) {
+            const celebration = document.getElementById('celebration');
+            celebration.textContent = message;
+            celebration.style.display = 'block';
+            setTimeout(() => {
+                celebration.style.display = 'none';
+            }, 3000);
+        }
+
+        // Day 완료/취소 토글
+        function toggleDay(dayId) {
+            const today = new Date().toISOString().split('T')[0];
+            const day = studyData.days.find(d => d.id === dayId);
+            
+            day.completed = !day.completed;
+            day.completedDate = day.completed ? today : null;
+            
+            if (day.completed) {
+                const newStreak = checkStreak(today);
+                studyData.streakCount = newStreak;
+                studyData.lastStudyDate = today;
+                studyData.badges = updateBadges(newStreak);
+                
+                // 완료 축하 메시지
+                if (day.type === 'weekend') {
+                    showCelebration(`🎉 ${day.title.includes('1회') ? '1주차' : '2주차'} 완주! 대단해요!`);
+                } else {
+                    showCelebration(`✅ ${day.title} 완료! 잘하고 있어요!`);
+                }
+            }
+            
+            saveData();
+            updateUI();
+        }
+
+        // 진도 계산
+        function calculateProgress() {
+            const totalDays = studyData.days.length;
+            const completedDays = studyData.days.filter(day => day.completed).length;
+            
+            return {
+                percentage: totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0,
+                completedDays,
+                totalDays
+            };
+        }
+
+        // 동기부여 메시지
+        function getMotivationMessage(percentage) {
+            if (percentage === 0) return "듀얼 브레인 독서 여행을 시작해보세요! 🚀";
+            if (percentage < 25) return "좋은 시작이에요! 독서의 즐거움을 느껴보세요 📚";
+            if (percentage < 50) return "절반까지 왔어요! 뇌가 변화하고 있어요 🧠";
+            if (percentage < 75) return "3/4 지점 통과! 듀얼 브레인이 활성화되고 있어요 ⚡";
+            if (percentage < 100) return "마지막 스퍼트! 완주까지 얼마 안 남았어요 🏃‍♂️";
+            return "듀얼 브레인 독서 완주 축하드려요! 🎉🏆 당신의 뇌는 이제 완전히 다릅니다!";
+        }
+
+        // 예상 완료일 계산
+        function calculateExpectedCompletion() {
+            const progress = calculateProgress();
+            if (progress.completedDays === 0) return "첫 번째 Day를 시작하면 예상 완료일을 계산해드려요";
+            
+            const completedDates = studyData.days
+                .filter(day => day.completed && day.completedDate)
+                .map(day => new Date(day.completedDate))
+                .sort((a, b) => a - b);
+            
+            if (completedDates.length < 2) return "더 많은 학습 데이터가 필요해요";
+            
+            const firstDate = completedDates[0];
+            const lastDate = completedDates[completedDates.length - 1];
+            const daysElapsed = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1;
+            const avgDaysPerDay = progress.completedDays / daysElapsed;
+            const remainingDays = progress.totalDays - progress.completedDays;
+            const daysToComplete = Math.ceil(remainingDays / avgDaysPerDay);
+            
+            const expectedDate = new Date();
+            expectedDate.setDate(expectedDate.getDate() + daysToComplete);
+            
+            return `${expectedDate.toLocaleDateString('ko-KR')} (약 ${daysToComplete}일 후)`;
+        }
+
+        // 노트 편집 시작
+        function startEditNote(dayId) {
+            editingNote = dayId;
+            renderDays();
+        }
+
+        // 노트 저장
+        function saveNote(dayId) {
+            const textarea = document.getElementById(`note-textarea-${dayId}`);
+            studyData.notes[dayId] = textarea.value;
+            editingNote = null;
+            saveData();
+            renderDays();
+        }
+
+        // 노트 편집 취소
+        function cancelEditNote() {
+            editingNote = null;
+            renderDays();
+        }
+
+        // Day 항목 렌더링
+        function renderDay(day) {
+            const hasNote = studyData.notes[day.id];
+            const isEditing = editingNote === day.id;
+            
+            return `
+                <div class="day-item">
+                    <div class="day-content ${day.completed ? 'completed' : ''} ${day.type} week-${day.week < 10 ? '0' + day.week : day.week}">
+                        <div class="day-checkbox ${day.completed ? 'checked' : ''}" onclick="toggleDay(${day.id})">
+                            ${day.completed ? '✓' : ''}
+                        </div>
+                        <div class="day-info">
+                            <div class="day-title ${day.completed ? 'completed' : ''} ${day.type} week-${day.week < 10 ? '0' + day.week : day.week}">
+                                ${day.title}
+                            </div>
+                            <div class="day-pages">${day.pages}</div>
+                            ${day.completedDate ? `
+                                <div class="day-completed">
+                                    ✅ 완료일: ${new Date(day.completedDate).toLocaleDateString('ko-KR')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <button class="note-btn ${hasNote ? 'has-note' : ''}" onclick="startEditNote(${day.id})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    ${hasNote && !isEditing ? `
+                        <div class="note-content">${studyData.notes[day.id]}</div>
+                    ` : ''}
+                    ${isEditing ? `
+                        <div class="note-edit">
+                            <textarea id="note-textarea-${day.id}" class="note-textarea" rows="3" placeholder="학습 노트를 입력하세요...">${studyData.notes[day.id] || ''}</textarea>
+                            <div class="note-buttons">
+                                <button class="btn-primary" onclick="saveNote(${day.id})">저장</button>
+                                <button class="btn-secondary" onclick="cancelEditNote()">취소</button>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // 주별 Day들 렌더링
+        function renderDays() {
+            const week1Days = studyData.days.filter(day => day.week === 1);
+            const week2Days = studyData.days.filter(day => day.week === 2);
+            
+            document.getElementById('week1-days').innerHTML = week1Days.map(renderDay).join('');
+            document.getElementById('week2-days').innerHTML = week2Days.map(renderDay).join('');
+            
+            // 주별 진도 업데이트
+            const week1Completed = week1Days.filter(day => day.completed).length;
+            const week2Completed = week2Days.filter(day => day.completed).length;
+            
+            document.getElementById('week1-progress').textContent = `${week1Completed}/${week1Days.length} 완료`;
+            document.getElementById('week2-progress').textContent = `${week2Completed}/${week2Days.length} 완료`;
+        }
+
+        // UI 업데이트
+        function updateUI() {
+            const progress = calculateProgress();
+            
+            // 통계 업데이트
+            document.getElementById('progress-percentage').textContent = `${progress.percentage}%`;
+            document.getElementById('completed-days').textContent = progress.completedDays;
+            document.getElementById('streak-count').textContent = `${studyData.streakCount}일`;
+            document.getElementById('badge-count').textContent = studyData.badges.length;
+            
+            // 진행바 업데이트
+            document.getElementById('progress-bar').style.width = `${progress.percentage}%`;
+            document.getElementById('progress-text').textContent = `${progress.completedDays}/${progress.totalDays} 완료`;
+            document.getElementById('motivation-message').textContent = getMotivationMessage(progress.percentage);
+            
+            // 배지 업데이트
+            badges.forEach(badge => {
+                const badgeElement = document.getElementById(`badge-${badge.id}`);
+                if (studyData.badges.includes(badge.id)) {
+                    badgeElement.classList.add('earned');
+                } else {
+                    badgeElement.classList.remove('earned');
+                }
+            });
+            
+            // 예상 완료일 업데이트
+            document.getElementById('expected-completion').textContent = calculateExpectedCompletion();
+            
+            // Day들 렌더링
+            renderDays();
+        }
+
+        // 초기화
+        function init() {
+            // 다크모드 설정 로드
+            const savedDarkMode = localStorage.getItem('darkMode');
+            if (savedDarkMode === 'true') {
+                toggleDarkMode();
+            }
+            
+            // 데이터 로드 및 UI 업데이트
+            loadData();
+            updateUI();
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
